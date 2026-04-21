@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SOLE — Shopify Pro Level</title>
+
+<style>
+:root{
+--bg:#0a0a0a;
+--card:#141414;
+--gold:#c8a96e;
+--text:#fff;
+--muted:#aaa;
+--border:#222;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+
+body{
+background:var(--bg);
+color:var(--text);
+}
+
+/* HEADER */
+header{
+position:sticky;
+top:0;
+display:flex;
+justify-content:space-between;
+padding:15px;
+background:#111;
+border-bottom:1px solid var(--border);
+z-index:10;
+}
+
+.logo{color:var(--gold);font-weight:bold;}
+
+/* HERO */
+.hero{
+padding:60px 20px;
+text-align:center;
+}
+
+.hero h1{
+font-size:50px;
+}
+
+/* FILTER */
+.filters{
+text-align:center;
+margin:10px;
+}
+
+.filters button{
+margin:5px;
+padding:8px;
+background:transparent;
+border:1px solid var(--gold);
+color:var(--gold);
+cursor:pointer;
+}
+
+.filters button:hover{
+background:var(--gold);
+color:#000;
+}
+
+/* PRODUCTS GRID */
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:20px;
+padding:20px;
+}
+
+.card{
+background:var(--card);
+padding:10px;
+border:1px solid var(--border);
+transition:0.3s;
+cursor:pointer;
+}
+
+.card:hover{
+transform:translateY(-8px);
+border-color:var(--gold);
+}
+
+.card img{
+width:100%;
+height:160px;
+object-fit:cover;
+}
+
+.price{color:var(--gold);}
+
+/* CART SIDEBAR */
+#cart{
+position:fixed;
+right:-400px;
+top:0;
+width:350px;
+height:100vh;
+background:#111;
+border-left:1px solid #333;
+padding:15px;
+transition:0.4s;
+overflow:auto;
+}
+
+#cart.active{right:0;}
+
+.item{
+padding:8px;
+border-bottom:1px solid #333;
+}
+
+/* MODAL */
+.modal{
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:rgba(0,0,0,0.8);
+display:none;
+align-items:center;
+justify-content:center;
+}
+
+.modal-content{
+background:#111;
+padding:20px;
+width:400px;
+border:1px solid var(--gold);
+}
+
+/* CHECKOUT */
+.checkout{
+padding:20px;
+}
+
+.btn{
+padding:8px;
+background:var(--gold);
+border:none;
+cursor:pointer;
+width:100%;
+margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="logo">SOLE PRO</div>
+<div>
+<button onclick="toggleCart()">Cart (<span id="count">0</span>)</button>
+<button onclick="openCheckout()">Checkout</button>
+</div>
+</header>
+
+<section class="hero">
+<h1>SHOPIFY LEVEL STORE</h1>
+<p>Premium eCommerce system (frontend pro clone)</p>
+</section>
+
+<!-- FILTER -->
+<div class="filters">
+<button onclick="filterCat('all')">All</button>
+<button onclick="filterCat('running')">Running</button>
+<button onclick="filterCat('lifestyle')">Lifestyle</button>
+<button onclick="filterCat('basketball')">Basketball</button>
+</div>
+
+<!-- PRODUCTS -->
+<div class="grid" id="grid"></div>
+
+<!-- CART -->
+<div id="cart"></div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal" id="modal">
+<div class="modal-content">
+<h2 id="mname"></h2>
+<p id="mprice"></p>
+<button class="btn" onclick="addFromModal()">Add to Cart</button>
+</div>
+</div>
+
+<!-- CHECKOUT -->
+<div class="modal" id="checkout">
+<div class="modal-content">
+<h2>Checkout</h2>
+<p id="summary"></p>
+<hr>
+<h3>Payment (EasyPaisa)</h3>
+<h2 style="color:#c8a96e">03017063401</h2>
+<p>Send screenshot after payment.</p>
+<button class="btn" onclick="closeCheckout()">Close</button>
+</div>
+</div>
+
+<script>
+
+/* PRODUCTS DATABASE */
+const products=[
+{id:1,name:"Apex Runner",price:189,cat:"running",img:"https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600"},
+{id:2,name:"Urban Stealth",price:149,cat:"lifestyle",img:"https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=600"},
+{id:3,name:"Phantom Court",price:219,cat:"basketball",img:"https://images.unsplash.com/photo-1579338559194-a162d19bf842?w=600"},
+{id:4,name:"Terra Trail",price:165,cat:"running",img:"https://images.unsplash.com/photo-1510771463146-e89e6e86560e?w=600"},
+];
+
+let cart=JSON.parse(localStorage.getItem("cart"))||[];
+let selected=null;
+
+/* RENDER */
+function render(list=products){
+let g=document.getElementById("grid");
+g.innerHTML="";
+list.forEach(p=>{
+g.innerHTML+=`
+<div class="card" onclick="openModal(${p.id})">
+<img src="${p.img}">
+<h3>${p.name}</h3>
+<p class="price">$${p.price}</p>
+</div>`;
+});
+}
+
+/* FILTER */
+function filterCat(c){
+if(c==="all")render();
+else render(products.filter(p=>p.cat===c));
+}
+
+/* MODAL */
+function openModal(id){
+selected=products.find(p=>p.id===id);
+document.getElementById("mname").innerText=selected.name;
+document.getElementById("mprice").innerText="$"+selected.price;
+document.getElementById("modal").style.display="flex";
+}
+
+function addFromModal(){
+cart.push(selected);
+save();
+updateCart();
+closeModal();
+}
+
+function closeModal(){
+document.getElementById("modal").style.display="none";
+}
+
+/* CART */
+function toggleCart(){
+document.getElementById("cart").classList.toggle("active");
+}
+
+function updateCart(){
+document.getElementById("count").innerText=cart.length;
+let c=document.getElementById("cart");
+c.innerHTML="<h2>Cart</h2>";
+cart.forEach(i=>{
+c.innerHTML+=`<div class="item">${i.name} - $${i.price}</div>`;
+});
+}
+
+/* CHECKOUT */
+function openCheckout(){
+document.getElementById("checkout").style.display="flex";
+document.getElementById("summary").innerText=
+"Items: "+cart.length+" | Total: $"+cart.reduce((a,b)=>a+b.price,0);
+}
+
+function closeCheckout(){
+document.getElementById("checkout").style.display="none";
+}
+
+/* LOCAL STORAGE */
+function save(){
+localStorage.setItem("cart",JSON.stringify(cart));
+}
+
+/* INIT */
+render();
+updateCart();
+
+</script>
+
+</body>
+  </html>
